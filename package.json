@@ -2,10 +2,10 @@
   "name": "job-application-platform",
   "version": "1.0.0",
   "description": "Job application management platform with AI resume matching",
-  "main": "app.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
     "seed": "node scripts/seed.js"
   },
   "dependencies": {

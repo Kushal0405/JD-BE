@@ -10,8 +10,8 @@ app.use(cors({ origin: process.env.CLIENT_URL || '*' }));
 app.use(express.json({ limit: '10mb' }));  // 10mb for base64 resume payloads
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/jobs', require('./routes/jobs'));
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/jobs', require('./routes//jobRoutes'));
 app.use('/api/applications', require('./routes/applications'));
 app.use('/api/resume', require('./routes/resume'));
 app.use('/api/companies', require('./routes/companies'));
