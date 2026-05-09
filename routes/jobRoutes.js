@@ -11,8 +11,11 @@ const router = express.Router();
 // Shared logic: fetch jobs from JSearch and upsert into DiscoveredJob collection
 // ---------------------------------------------------------------------------
 async function fetchDailyJobs({ query = 'React Developer', location = 'Hyderabad, India' } = {}) {
+  // JSearch requires location to be embedded in the query string — no separate location param
+  const searchQuery = location ? `${query} in ${location}` : query;
+
   const { data } = await axios.get('https://jsearch.p.rapidapi.com/search', {
-    params: { query, location, num_pages: '1' },
+    params: { query: searchQuery, num_pages: '1', page: '1' },
     headers: {
       'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
       'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
