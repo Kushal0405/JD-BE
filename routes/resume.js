@@ -21,8 +21,27 @@ const upload = multer({
 router.get('/my-text', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('defaultResume');
-    if (!user?.defaultResume) return res.json({ text: '' });
-    const resume = await Resume.findById(user.defaultResume).select('+parsedText');
+    let resume = null;
+    if (user?.defaultResume) {
+      resume = await Resume.findById(user.defaultResume).select('+parsedText');
+    }
+    // Fallback: find any resume with isDefault:true for this user
+    if (!resume) {
+      resume = await Resume.findOne({ user: req.user._id, isDefault: true }).select('+parsedText');
+      // Sync the user's defaultResume field to fix the inconsistency
+      if (resume) {
+        await User.findByIdAndUpdate(req.user._id, { defaultResume: resume._id });
+      }
+    }
+    // Last resort: use the most recent resume
+    if (!resume) {
+      resume = await Resume.findOne({ user: req.user._id }).sort({ createdAt: -1 }).select('+parsedText');
+      if (resume) {
+        resume.isDefault = true;
+        await resume.save();
+        await User.findByIdAndUpdate(req.user._id, { defaultResume: resume._id });
+      }
+    }
     res.json({ text: resume?.parsedText || '' });
   } catch (err) {
     res.status(500).json({ message: err.message });
