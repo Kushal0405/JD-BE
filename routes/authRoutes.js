@@ -1,8 +1,10 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 
 const router = express.Router();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
@@ -59,6 +61,51 @@ router.post('/login', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', require('../middleware/auth'), async (req, res) => {
   res.json({ user: req.user });
+});
+
+// POST /api/auth/google
+router.post('/google', async (req, res) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ message: 'Google credential required' });
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name } = payload;
+
+    let user = await User.findOne({ $or: [{ googleId }, { email }] });
+    if (user) {
+      if (!user.googleId) {
+        user.googleId = googleId;
+        await user.save();
+      }
+    } else {
+      user = await User.create({ name, email, googleId });
+    }
+
+    const token = signToken(user._id);
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        skills: user.skills,
+        targetRoles: user.targetRoles,
+        targetLocations: user.targetLocations,
+        expectedSalaryMin: user.expectedSalaryMin,
+        expectedSalaryMax: user.expectedSalaryMax,
+        experienceYears: user.experienceYears,
+        noticePeriod: user.noticePeriod,
+        defaultResume: user.defaultResume,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({ message: 'Google authentication failed' });
+  }
 });
 
 module.exports = router;
