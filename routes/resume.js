@@ -17,6 +17,18 @@ const upload = multer({
   },
 });
 
+// GET /api/resume/my-text — return parsedText of user's default resume (for ATS scoring)
+router.get('/my-text', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('defaultResume');
+    if (!user?.defaultResume) return res.json({ text: '' });
+    const resume = await Resume.findById(user.defaultResume).select('+parsedText');
+    res.json({ text: resume?.parsedText || '' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // GET /api/resume — list user's resumes
 router.get('/', auth, async (req, res) => {
   try {

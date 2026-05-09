@@ -49,6 +49,19 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+// POST /api/jobs/parse-jd — extract structured fields from raw JD text using AI
+router.post('/parse-jd', auth, async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text?.trim()) return res.status(400).json({ message: 'JD text is required' });
+    const ResumeService = require('../services/ResumeService');
+    const parsed = await ResumeService.parseJD(text);
+    res.json({ parsed });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // POST /api/jobs — create (admin or manual add)
 router.post('/', auth, async (req, res) => {
   try {

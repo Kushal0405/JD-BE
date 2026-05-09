@@ -78,6 +78,44 @@ Description: ${job.description?.slice(0, 800) || 'Not provided'}`;
   },
 
   /**
+   * Parse a raw job description text and extract structured job fields.
+   * Returns: { title, companyName, location, locationType, skills, description, salaryMin, salaryMax, experienceMin, experienceMax }
+   */
+  async parseJD(text) {
+    const prompt = `You are a job description parser. Extract structured information from the following job description.
+Return ONLY valid JSON with no markdown or explanation.
+Schema:
+{
+  "title": string,
+  "companyName": string,
+  "location": string,
+  "locationType": "remote" | "hybrid" | "onsite",
+  "skills": string[],
+  "description": string,
+  "salaryMin": number | null,
+  "salaryMax": number | null,
+  "experienceMin": number | null,
+  "experienceMax": number | null
+}
+Rules:
+- salaryMin/salaryMax should be annual figures in INR (convert if needed; null if not mentioned)
+- experienceMin/experienceMax in years (null if not mentioned)
+- locationType: infer from context ("work from home" / "remote" → remote, "hybrid" → hybrid, else onsite)
+- skills: list of technical skills and tools mentioned
+- description: concise 2–3 sentence summary of the role
+
+JOB DESCRIPTION:
+${text.slice(0, 4000)}`;
+    try {
+      const result = await model.generateContent(prompt);
+      return parseJSON(result.response.text());
+    } catch (err) {
+      console.error('ResumeService.parseJD error:', err.message);
+      return { title: '', companyName: '', location: '', locationType: 'onsite', skills: [], description: '', salaryMin: null, salaryMax: null, experienceMin: null, experienceMax: null };
+    }
+  },
+
+  /**
    * Given a user's resume skills, suggest the best matching jobs from a list.
    * Returns sorted jobs with matchScore attached.
    */

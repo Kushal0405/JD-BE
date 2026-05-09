@@ -16,6 +16,7 @@ app.use('/api/jobs', require('./routes//jobRoutes'));
 app.use('/api/applications', require('./routes/applications'));
 app.use('/api/resume', require('./routes/resume'));
 app.use('/api/companies', require('./routes/companies'));
+app.use('/api/ats-score', require('./routes/atsScore'));
 
 // Health check
 app.get('/health', (_, res) => res.json({ status: 'ok', ts: new Date() }));
