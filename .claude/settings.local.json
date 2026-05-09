@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"e:\\\\BE\\\\jobtracker-fe\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "PowerShell(Get-ChildItem -Path \"e:\\\\BE\\\\task-manager-backend\" -Recurse | Select-Object -First 100 | ForEach-Object { $_.FullName } | Sort-Object)",
+      "Bash(xargs wc -l)"
+    ]
+  }
+}

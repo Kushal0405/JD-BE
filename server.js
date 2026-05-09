@@ -47,6 +47,23 @@ app.get('/api/cron/scrape', async (req, res) => {
   }
 });
 
+// Vercel Cron endpoint — daily fetch of JSearch jobs (3:00 UTC = 8:30 AM IST)
+app.get('/api/cron/fetch-jobs', async (req, res) => {
+  const secret = process.env.CRON_SECRET;
+  if (secret && req.headers.authorization !== `Bearer ${secret}`) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  try {
+    const jobRoutes = require('./routes/jobRoutes');
+    const { fetchDailyJobs } = jobRoutes;
+    const result = await fetchDailyJobs({ query: 'React Developer', location: 'Hyderabad, India' });
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('[Cron] fetch-jobs failed:', err.message);
+    res.status(500).json({ ok: false, message: err.message });
+  }
+});
+
 // Global error handler
 app.use((err, req, res, _next) => {
   console.error(err);

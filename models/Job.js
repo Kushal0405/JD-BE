@@ -23,8 +23,9 @@ const jobSchema = new mongoose.Schema(
     skills: [{ type: String, trim: true }],          // ["React", "TypeScript", ...]
     tags: [{ type: String, trim: true }],             // ["frontend", "startup", ...]
 
+    externalId: { type: String, sparse: true },        // external job ID (from JSearch etc.)
     jdUrl: { type: String },                          // original job posting URL
-    source: { type: String, enum: ['manual', 'linkedin', 'naukri', 'indeed', 'company_site'], default: 'manual' },
+    source: { type: String, enum: ['manual', 'linkedin', 'naukri', 'indeed', 'company_site', 'jsearch'], default: 'manual' },
 
     isActive: { type: Boolean, default: true },
     postedAt: { type: Date, default: Date.now },
