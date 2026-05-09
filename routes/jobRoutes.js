@@ -71,9 +71,43 @@ router.post('/fetch-daily', async (req, res) => {
 });
 
 // GET /api/jobs/discovered — paginated list for the Discover page (JWT-protected)
+// If ?q= is provided, queries JSearch live and returns results directly (no DB save).
+// Without ?q=, returns previously-fetched jobs from DB.
 router.get('/discovered', auth, async (req, res) => {
   try {
-    const { role, location, page = 1, limit = 20 } = req.query;
+    const { role, location, page = 1, limit = 20, q } = req.query;
+
+    // ── Live search via JSearch ──────────────────────────────────────────
+    if (q?.trim()) {
+      const searchQuery = location?.trim()
+        ? `${q.trim()} in ${location.trim()}`
+        : q.trim();
+
+      const { data } = await axios.get('https://jsearch.p.rapidapi.com/search', {
+        params: { query: searchQuery, num_pages: '2', page: String(page) },
+        headers: {
+          'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
+          'X-RapidAPI-Host': 'jsearch.p.rapidapi.com',
+        },
+        timeout: 15000,
+      });
+
+      const jobs = (data.data ?? []).map((job) => ({
+        _id: job.job_id,
+        externalId: job.job_id,
+        title: job.job_title ?? '',
+        company: job.employer_name ?? '',
+        location: [job.job_city, job.job_state, job.job_country].filter(Boolean).join(', '),
+        description: job.job_description ?? '',
+        applyLink: job.job_apply_link ?? '',
+        source: 'jsearch',
+        fetchedAt: job.job_posted_at_datetime_utc ?? new Date(),
+      }));
+
+      return res.json({ jobs, total: jobs.length, page: Number(page), pages: 1, live: true });
+    }
+
+    // ── DB-backed list (previously fetched) ─────────────────────────────
     const filter = {};
     if (role) filter.title = new RegExp(role, 'i');
     if (location) filter.location = new RegExp(location, 'i');
@@ -89,6 +123,7 @@ router.get('/discovered', auth, async (req, res) => {
 
     res.json({ jobs, total, page: Number(page), pages: Math.ceil(total / Number(limit)) });
   } catch (err) {
+    console.error('[discovered]', err.message);
     res.status(500).json({ message: err.message });
   }
 });
