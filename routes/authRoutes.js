@@ -35,7 +35,22 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
 
     const token = signToken(user._id);
-    res.json({ token });
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        skills: user.skills,
+        targetRoles: user.targetRoles,
+        targetLocations: user.targetLocations,
+        expectedSalaryMin: user.expectedSalaryMin,
+        expectedSalaryMax: user.expectedSalaryMax,
+        experienceYears: user.experienceYears,
+        noticePeriod: user.noticePeriod,
+        defaultResume: user.defaultResume,
+      },
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
